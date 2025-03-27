@@ -11,7 +11,6 @@ interface Note {
   tags: Tag[]
 }
 
-// Lista de etiquetas predefinidas
 const predefinedTags: Tag[] = [
   { id: "tag-1", name: "Trabajo", color: "bg-blue-500" },
   { id: "tag-2", name: "Personal", color: "bg-green-500" },
@@ -35,7 +34,6 @@ export default function NotePage() {
 
   const isNewNote = id === "new"
 
-  // Cargar nota
   useEffect(() => {
     const user = localStorage.getItem("user")
     if (!user) {
@@ -61,10 +59,8 @@ export default function NotePage() {
 
     const loadNote = async () => {
       try {
-        // Simulación de carga de nota
         await new Promise((resolve) => setTimeout(resolve, 1000))
 
-        // Notas de ejemplo con etiquetas
         const exampleNotes: Record<string, Note> = {
           "1": {
             id: "1",
@@ -84,7 +80,6 @@ export default function NotePage() {
           },
         }
 
-        // Obtener la nota según el ID
         const exampleNote = exampleNotes[id] || {
           id,
           title: "Nota",
@@ -109,7 +104,6 @@ export default function NotePage() {
     loadNote()
   }, [id, isNewNote, navigate])
 
-  // Guardar automáticamente después de 2 segundos de inactividad
   useEffect(() => {
     if (isLoading || isNewNote) return
 
@@ -130,14 +124,12 @@ export default function NotePage() {
     }
   }, [title, content, tags, note, isNewNote, isLoading])
 
-  // Guardar nota
   const saveNote = async (showToast = true) => {
     if (isSaving) return
 
     setIsSaving(true)
 
     try {
-      // Simulación de guardado
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
       const updatedNote = {
@@ -151,23 +143,19 @@ export default function NotePage() {
       setNote(updatedNote)
 
       if (isNewNote) {
-        // Redirigir a la nota recién creada (simulado con ID 2)
         navigate("/notes/2")
       }
     } catch (error) {
       console.log("Error al guardar la nota:", error);
-      // Error silencioso
     } finally {
       setIsSaving(false)
     }
   }
 
-  // Volver al dashboard
   const goBack = () => {
     navigate("/dashboard")
   }
 
-  // Seleccionar etiqueta
   const toggleTag = (tag: Tag) => {
     if (tags.some((t) => t.id === tag.id)) {
       setTags(tags.filter((t) => t.id !== tag.id))

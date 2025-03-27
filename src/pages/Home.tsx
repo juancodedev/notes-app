@@ -2,7 +2,6 @@ import type React from "react"
 import { useState } from "react";
 import { useNavigate } from "react-router-dom"
 
-
 export default function Home() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -28,7 +27,8 @@ export default function Home() {
                 throw new Error("Error en el registro");
             }
             const data = await response.json();
-            localStorage.setItem("user", JSON.stringify({email, token: data.token }))
+            localStorage.setItem("user", JSON.stringify({email, token: data.access_token, id: data.id}))
+            console.log(localStorage.getItem("user"));
             navigate("/dashboard")
         } catch (error) {
             setError("Credenciales inválidas. Por favor intenta de nuevo.")

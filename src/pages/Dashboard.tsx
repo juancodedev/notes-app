@@ -8,7 +8,6 @@ export type Tag = {
   color?: string
 }
 
-// Tipo para las notas
 interface Note {
   id: string
   title: string
@@ -18,7 +17,6 @@ interface Note {
   updatedAt: Date
 }
 
-// Lista de etiquetas predefinidas
 const predefinedTags: Tag[] = [
   { id: "tag-1", name: "Trabajo", color: "bg-blue-500" },
   { id: "tag-2", name: "Personal", color: "bg-green-500" },
@@ -34,21 +32,33 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
 
-  // Verificar si el usuario está autenticado
   useEffect(() => {
-    const user = localStorage.getItem("user")
+    const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") as string) : null;
+    const token = user?.token;
+    console.log(token);
+    
+    
     if (!user) {
       navigate("/")
       return
     }
 
-    // Cargar notas (simulado)
     const loadNotes = async () => {
       try {
-        // Simulación de carga de notas
-        await new Promise((resolve) => setTimeout(resolve, 1000))
 
-        // Notas de ejemplo con etiquetas
+        const response = await fetch("http://localhost:8000/api/notes/", {
+          method: "GET",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+          }
+        });
+        console.log(response);
+
+        if (!response.ok) {
+          throw new Error("Error al cargar las notas");
+        }
+
         const exampleNotes: Note[] = [
           {
             id: "1",
@@ -189,7 +199,6 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Filtro de etiquetas */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-2">
             <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
