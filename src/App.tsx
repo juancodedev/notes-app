@@ -1,9 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { ThemeProvider } from "./components/ThemeProvider"
-
+import './App.css'
 
 import Home from "./pages/Home"
-import './App.css'
+import NotePage from "./pages/NotePage"
+import Register from "./pages/Register"
+import Dashboard from "./pages/Dashboard"
 
 function App() {
 
@@ -13,11 +15,9 @@ function App() {
 
         <Routes>
           <Route path="/" element={<Home />} />
-          {/* <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/dashboard" element={<DashBoard />} />
-          <Route path="/notes/create" element={<CreateNote />} />
-          <Route path="/notes/:id" element={<CreateNote />} /> */}
+          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/notes/:id" element={<NotePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
