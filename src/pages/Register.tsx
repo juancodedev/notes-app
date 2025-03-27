@@ -23,16 +23,25 @@ export default function Register() {
     setIsLoading(true)
 
     try {
-      // Simulación de registro - en una implementación real, esto sería una llamada a la API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch("http://localhost:8000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          username: email,
+          password, 
+        })
+      });
 
-      // Simulamos un registro exitoso
-      localStorage.setItem("user", JSON.stringify({ name, email }))
-
+      if (!response.ok){
+        throw new Error("Error en el registro");
+      }
+      const data = await response.json();
+      localStorage.setItem("user", JSON.stringify({ name, email, token: data.token}))
       navigate("/dashboard")
     } catch (error) {
       console.log(error);
-      setError("Error al registrar. Por favor intenta de nuevo.")
+      setError("Error al registrar. Por favor intenta de nuevo.");
     } finally {
       setIsLoading(false)
     }
@@ -122,4 +131,3 @@ export default function Register() {
     </div>
   )
 }
-

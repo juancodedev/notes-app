@@ -15,9 +15,20 @@ export default function Home() {
         setError("")
         setIsLoading(true)
         try {
-            await new Promise((resolve) => setTimeout(resolve, 1000))
+            const response = await fetch("http://localhost:8000/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: email,
+                    password,
+                })
+            });
 
-            localStorage.setItem("user", JSON.stringify({ email }))
+            if (!response.ok) {
+                throw new Error("Error en el registro");
+            }
+            const data = await response.json();
+            localStorage.setItem("user", JSON.stringify({email, token: data.token }))
             navigate("/dashboard")
         } catch (error) {
             setError("Credenciales inválidas. Por favor intenta de nuevo.")
