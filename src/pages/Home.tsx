@@ -28,10 +28,9 @@ export default function Home() {
             }
             const data = await response.json();
             localStorage.setItem("user", JSON.stringify({email, token: data.access_token, id: data.id}))
-            console.log(localStorage.getItem("user"));
             navigate("/dashboard")
         } catch (error) {
-            setError("Credenciales inválidas. Por favor intenta de nuevo.")
+            setError("Credenciales inválidas. Por favor intenta de nuevo.", error)
         } finally {
             setIsLoading(false)
         }
