@@ -1,25 +1,20 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useCallback, useRef} from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import type { Tag } from "./Dashboard"
 
 interface Note {
   id: string
   title: string
+  tags: Tag[]
   content: string
+  locked: boolean
   createdAt: Date
   updatedAt: Date
-  tags: Tag[]
 }
 
-const predefinedTags: Tag[] = [
-  { id: "tag-1", name: "Trabajo", color: "bg-blue-500" },
-  { id: "tag-2", name: "Personal", color: "bg-green-500" },
-  { id: "tag-3", name: "Importante", color: "bg-red-500" },
-  { id: "tag-4", name: "Ideas", color: "bg-purple-500" },
-  { id: "tag-5", name: "Proyecto", color: "bg-yellow-500" },
-]
-
 export default function NotePage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate()
   const [note, setNote] = useState<Note | null>(null)
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
@@ -28,16 +23,13 @@ export default function NotePage() {
   const [isSaving, setIsSaving] = useState(false)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const navigate = useNavigate()
-  const params = useParams()
-  const id = params.id as string
-
   const isNewNote = id === "new"
 
   useEffect(() => {
-    const user = localStorage.getItem("user")
+    const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") as string) : null;
+    const token = user?.token;
     if (!user) {
-      navigate("/")
+      navigate("/");
       return
     }
 
@@ -47,6 +39,7 @@ export default function NotePage() {
         title: "Nueva Nota",
         content: "",
         tags: [],
+        locked: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -59,50 +52,80 @@ export default function NotePage() {
 
     const loadNote = async () => {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        const response = await fetch(`http://localhost:8000/api/notes/${id}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token,
+          },
+        });
 
-        const exampleNotes: Record<string, Note> = {
-          "1": {
-            id: "1",
-            title: "Bienvenido a Sistema de Notas",
-            content: "Esta es tu primera nota. Puedes editarla o crear nuevas notas.",
-            tags: [predefinedTags[1], predefinedTags[0]],
-            createdAt: new Date(Date.now() - 86400000 * 2),
-            updatedAt: new Date(Date.now() - 86400000 * 2),
-          },
-          "2": {
-            id: "2",
-            title: "Ideas para proyectos",
-            content: "Lista de ideas para futuros proyectos...",
-            tags: [predefinedTags[3], predefinedTags[4]],
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+        if (!response.ok) {
+          throw new Error("Error al cargar la nota");
         }
 
-        const exampleNote = exampleNotes[id] || {
-          id,
-          title: "Nota",
-          content: "Contenido de la nota",
-          tags: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-
-        setNote(exampleNote)
-        setTitle(exampleNote.title)
-        setContent(exampleNote.content)
-        setTags(exampleNote.tags)
+        const data = await response.json();
+        setNote(data)
+        setTitle(data.title)
+        setContent(data.content)
+        setTags(data.tags)
       } catch (error) {
-        console.log("Error al cargar la nota:", error);
+        console.error("Error al cargar la nota:", error);
         navigate("/dashboard")
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
-
+    };
     loadNote()
   }, [id, isNewNote, navigate])
+
+  const saveNote = useCallback(async () => {
+    const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") as string) : null;
+    const token = user?.token;
+    if (isSaving) return
+
+    setIsSaving(true)
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      const payload = {
+        title,
+        content,
+        tags,
+        locked: false,
+        updatedAt: new Date(),
+      }
+
+      const url = isNewNote
+      ? "http://localhost:8000/api/notes/"
+      : `http://localhost:8000/api/notes/${id}`;
+
+      const method = isNewNote ? "POST" : "PUT";
+
+      const response = await fetch(url, {
+        method: method,
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error al ${isNewNote ? "crear" : "actualizar"} la nota`);
+      }
+      const data = await response.json();
+      console.log(data)
+
+      setNote(data)
+      navigate("/dashboard")
+    } catch (error) {
+      console.log("Error al guardar la nota:", error);
+    } finally {
+      setIsSaving(false)
+    }
+  }, [title, content, tags, isSaving, isNewNote, navigate, id])
 
   useEffect(() => {
     if (isLoading || isNewNote) return
@@ -113,56 +136,29 @@ export default function NotePage() {
 
     saveTimeoutRef.current = setTimeout(() => {
       if (title !== note?.title || content !== note?.content || JSON.stringify(tags) !== JSON.stringify(note?.tags)) {
-        saveNote(false)
+        saveNote()
       }
-    }, 2000)
+    }, 3000)
 
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current)
       }
     }
-  }, [title, content, tags, note, isNewNote, isLoading])
+  }, [title, content, tags, note, isNewNote, isLoading, saveNote])
 
-  const saveNote = async (showToast = true) => {
-    if (isSaving) return
-
-    setIsSaving(true)
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      const updatedNote = {
-        ...note!,
-        title,
-        content,
-        tags,
-        updatedAt: new Date(),
-      }
-
-      setNote(updatedNote)
-
-      if (isNewNote) {
-        navigate("/notes/2")
-      }
-    } catch (error) {
-      console.log("Error al guardar la nota:", error);
-    } finally {
-      setIsSaving(false)
-    }
-  }
 
   const goBack = () => {
     navigate("/dashboard")
   }
 
-  const toggleTag = (tag: Tag) => {
-    if (tags.some((t) => t.id === tag.id)) {
-      setTags(tags.filter((t) => t.id !== tag.id))
-    } else {
-      setTags([...tags, tag])
-    }
-  }
+  // const toggleTag = (tag: Tag) => {
+  //   if (tags.some((t) => t.id === tag.id)) {
+  //     setTags(tags.filter((t) => t.id !== tag.id))
+  //   } else {
+  //     setTags([...tags, tag])
+  //   }
+  // }
 
   if (isLoading) {
     return (
@@ -184,7 +180,30 @@ export default function NotePage() {
       </div>
     )
   }
-
+  console.log("tags", tags);
+  
+  if (note?.locked) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <header className="sticky top-0 z-10 border-b bg-white px-4 py-3 flex items-center">
+          <button className="btn btn-outline mr-2" onClick={goBack}>
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+          </button>
+          <h1 className="text-xl font-bold">Nota Bloqueada</h1>
+        </header>
+        <main className="flex-1 p-4 md:p-6 flex justify-center items-center">
+          <div className="text-center">
+            <p className="text-gray-500 mb-4">Esta nota está bloqueada y no se puede editar.</p>
+            <button className="btn btn-primary" onClick={goBack}>
+              Volver al Dashboard
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="sticky top-0 z-10 border-b bg-white px-4 py-3 flex items-center justify-between">
@@ -196,23 +215,11 @@ export default function NotePage() {
           </button>
           <h1 className="text-xl font-bold">{note?.title}</h1>
         </div>
-        <button className="btn btn-primary" onClick={() => saveNote(true)} disabled={isSaving}>
-          <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-            />
-          </svg>
-          {isSaving ? "Guardando..." : "Guardar"}
-        </button>
       </header>
 
       <main className="flex-1 p-4 md:p-6 flex justify-center">
         <div className="card w-full max-w-2xl">
           <h2 className="text-xl font-bold mb-4">Editor de Nota</h2>
-
           <div className="space-y-4">
             <div>
               <label htmlFor="title" className="label">
@@ -242,9 +249,11 @@ export default function NotePage() {
             </div>
 
             <div>
-              <label className="label">Etiquetas</label>
-              <div className="flex flex-wrap gap-2">
-                {predefinedTags.map((tag) => (
+              <label htmlFor="tags" className="label">Etiquetas</label>
+              <div id="tags" className="flex flex-wrap gap-2">
+
+
+                {/* {tags.map((tag) => (
                   <button
                     key={tag.id}
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -256,13 +265,13 @@ export default function NotePage() {
                   >
                     {tag.name}
                   </button>
-                ))}
+                ))} */}
               </div>
             </div>
           </div>
 
           <div className="mt-6 flex justify-end">
-            <button className="btn btn-primary" onClick={() => saveNote(true)} disabled={isSaving}>
+            <button className="btn btn-primary" onClick={() => saveNote()} disabled={isSaving}>
               <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
