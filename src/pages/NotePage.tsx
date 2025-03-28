@@ -50,7 +50,7 @@ export default function NotePage() {
       return
     }
 
-    const loadNote = async () => {
+    const loadNoteWithLock = async () => {
       try {
         const response = await fetch(`http://localhost:8000/api/notes/${id}`, {
           method: "GET",
@@ -60,6 +60,11 @@ export default function NotePage() {
           },
         });
 
+        if (response.status === 423) {
+          alert("La nota está siendo editada por otro usuario. Intenta más tarde.");
+          navigate("/dashboard");
+          return;
+        }
         if (!response.ok) {
           throw new Error("Error al cargar la nota");
         }
@@ -76,7 +81,7 @@ export default function NotePage() {
         setIsLoading(false);
       }
     };
-    loadNote()
+    loadNoteWithLock()
   }, [id, isNewNote, navigate])
 
   const saveNote = useCallback(async () => {
@@ -87,8 +92,6 @@ export default function NotePage() {
     setIsSaving(true)
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
       const payload = {
         title,
         content,
@@ -112,23 +115,28 @@ export default function NotePage() {
         body: JSON.stringify(payload),
       });
 
+      if (response.status === 423) { 
+        alert("No se puede guardar la nota porque está bloqueada por otro usuario.");
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(`Error al ${isNewNote ? "crear" : "actualizar"} la nota`);
       }
-      const data = await response.json();
-      console.log(data)
 
+      const data = await response.json();
       setNote(data)
       navigate("/dashboard")
     } catch (error) {
       console.log("Error al guardar la nota:", error);
+      alert("Ocurrió un error al guardar la nota. Intenta nuevamente.");
     } finally {
       setIsSaving(false)
     }
   }, [title, content, tags, isSaving, isNewNote, navigate, id])
 
   useEffect(() => {
-    if (isLoading || isNewNote) return
+    if (isLoading || isNewNote|| note?.locked) return
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current)
@@ -138,7 +146,7 @@ export default function NotePage() {
       if (title !== note?.title || content !== note?.content || JSON.stringify(tags) !== JSON.stringify(note?.tags)) {
         saveNote()
       }
-    }, 3000)
+    }, 2000)
 
     return () => {
       if (saveTimeoutRef.current) {
@@ -180,29 +188,28 @@ export default function NotePage() {
       </div>
     )
   }
-  console.log("tags", tags);
   
   if (note?.locked) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <header className="sticky top-0 z-10 border-b bg-white px-4 py-3 flex items-center">
-          <button className="btn btn-outline mr-2" onClick={goBack}>
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </button>
-          <h1 className="text-xl font-bold">Nota Bloqueada</h1>
-        </header>
-        <main className="flex-1 p-4 md:p-6 flex justify-center items-center">
-          <div className="text-center">
-            <p className="text-gray-500 mb-4">Esta nota está bloqueada y no se puede editar.</p>
-            <button className="btn btn-primary" onClick={goBack}>
-              Volver al Dashboard
+        <div className="min-h-screen flex flex-col bg-gray-50">
+          <header className="sticky top-0 z-10 border-b bg-white px-4 py-3 flex items-center">
+            <button className="btn btn-outline mr-2" onClick={goBack}>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
             </button>
-          </div>
-        </main>
-      </div>
-    );
+            <h1 className="text-xl font-bold">Nota Bloqueada</h1>
+          </header>
+          <main className="flex-1 p-4 md:p-6 flex justify-center items-center">
+            <div className="text-center">
+              <p className="text-gray-500 mb-4">Esta nota está bloqueada y no se puede editar.</p>
+              <button className="btn btn-primary" onClick={goBack}>
+                Volver al Dashboard
+              </button>
+            </div>
+          </main>
+        </div>
+      );
   }
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

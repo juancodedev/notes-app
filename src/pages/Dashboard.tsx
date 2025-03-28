@@ -50,7 +50,7 @@ export default function Dashboard() {
           throw new Error("Error al cargar las notas");
         }
         const data = await response.json();
-        console.log(data)
+
 
         setNotes(data)
       } catch (error) {
@@ -79,8 +79,6 @@ export default function Dashboard() {
   }
   const editNote = (id: string) => {
     const note = notes.find((note) => note.id === id);
-
-    console.log(note);
 
     if (note?.locked) {
       alert("Esta nota está bloqueada y no se puede editar.");
