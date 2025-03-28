@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 
-// Tipo para las etiquetas
+import Swal from "sweetalert2";
+
 export type Tag = {
   id: string
   name: string
@@ -13,17 +14,10 @@ interface Note {
   title: string
   content: string
   tags: Tag[]
+  locked: boolean
   createdAt: Date
   updatedAt: Date
 }
-
-const predefinedTags: Tag[] = [
-  { id: "tag-1", name: "Trabajo", color: "bg-blue-500" },
-  { id: "tag-2", name: "Personal", color: "bg-green-500" },
-  { id: "tag-3", name: "Importante", color: "bg-red-500" },
-  { id: "tag-4", name: "Ideas", color: "bg-purple-500" },
-  { id: "tag-5", name: "Proyecto", color: "bg-yellow-500" },
-]
 
 export default function Dashboard() {
   const [notes, setNotes] = useState<Note[]>([])
@@ -35,9 +29,7 @@ export default function Dashboard() {
   useEffect(() => {
     const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") as string) : null;
     const token = user?.token;
-    console.log(token);
-    
-    
+
     if (!user) {
       navigate("/")
       return
@@ -53,32 +45,14 @@ export default function Dashboard() {
             "Authorization": "Bearer " + token
           }
         });
-        console.log(response);
 
         if (!response.ok) {
           throw new Error("Error al cargar las notas");
         }
+        const data = await response.json();
 
-        const exampleNotes: Note[] = [
-          {
-            id: "1",
-            title: "Bienvenido a Sistema de Notas",
-            content: "Esta es tu primera nota. Puedes editarla o crear nuevas notas.",
-            tags: [predefinedTags[1], predefinedTags[0]],
-            createdAt: new Date(Date.now() - 86400000 * 2),
-            updatedAt: new Date(Date.now() - 86400000 * 2),
-          },
-          {
-            id: "2",
-            title: "Ideas para proyectos",
-            content: "Lista de ideas para futuros proyectos...",
-            tags: [predefinedTags[3], predefinedTags[4]],
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ]
 
-        setNotes(exampleNotes)
+        setNotes(data)
       } catch (error) {
         console.error("Error al cargar notas:", error)
       } finally {
@@ -100,27 +74,57 @@ export default function Dashboard() {
     return matchesSearch && matchesTag
   })
 
-  // Crear nueva nota
   const createNewNote = () => {
     navigate("/notes/new")
   }
-
-  // Editar nota
   const editNote = (id: string) => {
-    navigate(`/notes/${id}`)
+    const note = notes.find((note) => note.id === id);
+
+    if (note?.locked) {
+      alert("Esta nota está bloqueada y no se puede editar.");
+      return;
+    }
+  
+    navigate(`/notes/${id}`);
   }
 
-  // Eliminar nota
   const deleteNote = async (id: string) => {
-    try {
-      // Simulación de eliminación
-      await new Promise((resolve) => setTimeout(resolve, 500))
+    const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") as string) : null;
+    const token = user?.token;
 
-      setNotes(notes.filter((note) => note.id !== id))
-    } catch (error) {
-      console.log("Error al eliminar la nota:", error);
-
-    }
+    Swal.fire({
+      title: "¿Estás seguro?",
+      text: "No podrás revertir esta acción!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar!"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch(`http://localhost:8000/api/notes/${id}`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + token,
+            },
+          });
+          if (!response.ok) {
+            throw new Error("Error al eliminar la nota");
+          }
+          setNotes(notes.filter((note) => note.id !== id))
+        } catch (error) {
+          console.log("Error al eliminar la nota:", error);
+          Swal.fire("Error", "Hubo un problema al eliminar la nota", "error");
+        }
+        Swal.fire({
+          title: "Deleted!",
+          text: "Your file has been deleted.",
+          icon: "success"
+        });
+      }
+    });
   }
 
   // Filtrar por etiqueta
@@ -141,13 +145,11 @@ export default function Dashboard() {
     return uniqueTags
   }
 
-  // Cerrar sesión
   const logout = () => {
     localStorage.removeItem("user")
     navigate("/")
   }
 
-  // Formatear fecha relativa
   const formatRelativeDate = (date: Date) => {
     const now = new Date()
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)

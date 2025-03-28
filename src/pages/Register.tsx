@@ -30,14 +30,15 @@ export default function Register() {
           name,
           username: email,
           password, 
-        })
+        }),
+        redirect: "follow",
       });
 
       if (!response.ok){
         throw new Error("Error en el registro");
       }
       const data = await response.json();
-      localStorage.setItem("user", JSON.stringify({ name, email, token: data.token}))
+      localStorage.setItem("user", JSON.stringify({email, token: data.access_token, id: data.id}))
       navigate("/dashboard")
     } catch (error) {
       console.log(error);
