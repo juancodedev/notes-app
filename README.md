@@ -53,10 +53,10 @@ Asegúrate de tener instalados los siguientes programas:
 - **SweetAlert2**: Con sus alertas personalizables y modernas, me ayudo a mejorar experiencia del usuario, logrando que sea mas amigable y agradable a la usabilidad.
 - **Shadcn UI**: La libreria ya la conocia y he utilizado en otros proyectos, junto con nextJS, aunque en este caso me generó problemas de compatibilidad, lo que me lleva a mejorar y aprender mas de ella.
 
-** Desafios enfrentados**
+**Desafios enfrentados**
 * **Shadcn UI**: La poca experiencia en el uso de esta libreria y Tailwind CSS, me ocaciono que el diseño no fuera el esperado, ya que me genero conflictos en su configuracion, entregando un diseño no tan atractivo como el esperado.
 
 
 
 **Licencia**
-    Este proyecto está bajo la licencia MIT. ```
+    Este proyecto está bajo la licencia MIT.
