@@ -1,14 +1,9 @@
+import { Badge, Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Input, Textarea } from "@/components/ui";
+import { Edit, Plus, Search, TagIcon, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-
+import type { Tag } from "@/components/TagInput"
 import Swal from "sweetalert2";
-
-export type Tag = {
-  id: string
-  name: string
-  color?: string
-}
-
 interface Note {
   id: string
   title: string
@@ -24,6 +19,8 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showNewNoteModal, setShowNewNoteModal] = useState(false)
+  const [allTags, setAllTags] = useState<Tag[]>([])
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -34,13 +31,19 @@ export default function Dashboard() {
       navigate("/")
       return
     }
+    const storedTags = localStorage.getItem("allTags")
+    if (storedTags) {
+      setAllTags(JSON.parse(storedTags))
+    } else {
+      localStorage.setItem("allTags", JSON.stringify(predefinedTags))
+    }
 
     const loadNotes = async () => {
       try {
 
         const response = await fetch("http://localhost:8000/api/notes/", {
           method: "GET",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
             "Authorization": "Bearer " + token
           }
@@ -75,7 +78,11 @@ export default function Dashboard() {
   })
 
   const createNewNote = () => {
-    navigate("/notes/new")
+    if (window.innerWidth < 768) {
+      setShowNewNoteModal(true)
+    } else {
+      navigate("/notes/new")
+    }
   }
   const editNote = (id: string) => {
     const note = notes.find((note) => note.id === id);
@@ -84,7 +91,7 @@ export default function Dashboard() {
       alert("Esta nota está bloqueada y no se puede editar.");
       return;
     }
-  
+
     navigate(`/notes/${id}`);
   }
 
@@ -161,73 +168,50 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <header className="sticky top-0 z-10 border-b bg-white px-4 py-3 flex items-center justify-between">
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-10 border-b bg-background px-4 py-3 flex item-center justify-between">
         <h1 className="text-xl font-bold">Sistema de Notas</h1>
-        <button className="btn btn-outline" onClick={logout}>
+        <Button variant="ghost" onClick={logout}>
           Cerrar Sesión
-        </button>
+        </Button>
       </header>
-
       <main className="flex-1 p-4 md:p-6">
         <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="relative w-full sm:w-96">
-            <input
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
               type="search"
               placeholder="Buscar notas..."
-              className="input pl-8"
+              className="w-full pl-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <svg
-              className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
           </div>
-          <button className="btn btn-primary" onClick={createNewNote}>
-            <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Nueva Nota
-          </button>
+          <Button onClick={createNewNote}>
+            <Plus className="mr-2 h-4 w-4" />Nueva Nota
+          </Button>
         </div>
 
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-2">
-            <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-              />
-            </svg>
+            <TagIcon className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Filtrar por etiqueta:</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {getUniqueTags().map((tag) => (
-              <button
+              <Badge
                 key={tag.id}
-                className={`px-2 py-1 rounded-full text-xs font-medium ${selectedTag === tag.id ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                  }`}
+                variant={selectedTag === tag.id ? "default" : "outline"}
+                className="cursor-pointer"
                 onClick={() => filterByTag(tag.id)}
               >
                 {tag.name}
-              </button>
+              </Badge>
             ))}
             {selectedTag && (
-              <button className="px-2 py-1 text-xs text-blue-600 hover:underline" onClick={() => setSelectedTag(null)}>
+              <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setSelectedTag(null)}>
                 Limpiar filtro
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -235,77 +219,93 @@ export default function Dashboard() {
         {isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="card animate-pulse">
-                <div className="h-5 w-3/4 bg-gray-200 rounded mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-5/6 mb-4"></div>
-                <div className="h-4 w-1/3 bg-gray-200 rounded"></div>
-              </div>
+              <Card key={i} className="animate-pulse">
+                <CardHeader className="pb-2">
+                  <div className="h-5 w-3/4 bg-muted rounded"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-4 bg-muted rounded mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-5/6"></div>
+                </CardContent>
+                <CardFooter>
+                  <div className="h-4 w-1/3 bg-muted rounded"></div>
+                </CardFooter>
+              </Card>
             ))}
           </div>
         ) : filteredNotes.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredNotes.map((note) => (
-              <div key={note.id} className="card">
-                <h3 className="text-lg font-semibold mb-1">{note.title}</h3>
-                <p className="text-gray-500 text-sm mb-2">{formatRelativeDate(new Date(note.updatedAt))}</p>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-3">{note.content}</p>
-
-                {note.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {note.tags.map((tag) => (
-                      <span key={tag.id} className="px-2 py-0.5 bg-gray-100 rounded-full text-xs">
-                        {tag.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex justify-between">
-                  <button
-                    className="text-sm text-blue-600 hover:underline flex items-center"
-                    onClick={() => editNote(note.id)}
-                  >
-                    <svg className="mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                    Editar
-                  </button>
-                  <button
-                    className="text-sm text-red-600 hover:underline flex items-center"
-                    onClick={() => deleteNote(note.id)}
-                  >
-                    <svg className="mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                    Eliminar
-                  </button>
-                </div>
-              </div>
+              <Card key={note.id} className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">{note.title}</CardTitle>
+                  <CardDescription>
+                    {formatRelativeDate(new Date(note.updatedAt))}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-2">
+                  <p className="line-clamp-3 text-sm text-muted-foreground mb-2"> {note.content}</p>
+                  {note.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {note.tags.map((tag) => (
+                        <Badge key={tag.id} variant="secondary" className="text-xs">
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="pt-2 flex justify-between">
+                  <Button variant="ghost" size="sm" onClick={() => editNote(note.id)}>
+                    <Edit className="mr-2 h-4 w-4" /> Editar
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => deleteNote(note.id)}>
+                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                  </Button>
+                </CardFooter>
+              </Card>
             ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12">
-            <p className="text-gray-500 mb-4">No se encontraron notas</p>
-            <button className="btn btn-primary" onClick={createNewNote}>
-              <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Crear Nueva Nota
-            </button>
+            <p className="text-muted-foreground mb-4">No se encontraron notas</p>
+            <Button onClick={createNewNote}>
+              <Plus className="mr-2 h-4 w-4" /> Crear Nueva Nota
+            </Button>
           </div>
         )}
       </main>
+      {showNewNoteModal && (
+        <Dialog open={showNewNoteModal} onOpenChange={setShowNewNoteModal}>
+          <DialogContent className="sm:max-w-[90%] md:max-w-[80%] lg:max-w-[60%] xl:max-w-[50%]">
+            <DialogHeader>
+              <DialogTitle>Nueva Nota</DialogTitle>
+              <DialogDescription>Crea una nueva nota</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="space-y-4">
+                <div>
+                  <Input type="text" className="text-xl font-bold" placeholder="Titulo de la Nota" />
+                </div>
+                <div>
+                  <Textarea className="min-h-[40vh] resize-none" placeholder="Escribe tu nota aqui..." />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowNewNoteModal(false)}>
+                Cancelar
+              </Button>
+              <Button 
+              onClick={() => {setShowNewNoteModal(false)
+                navigate("/notes/new")
+              }}>
+                Continuar Editando
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }

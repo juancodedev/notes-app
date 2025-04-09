@@ -1,3 +1,4 @@
+import { Alert, AlertDescription, Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Input, Label } from "@/components/ui"
 import type React from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -29,16 +30,16 @@ export default function Register() {
         body: JSON.stringify({
           name,
           username: email,
-          password, 
+          password,
         }),
         redirect: "follow",
       });
 
-      if (!response.ok){
+      if (!response.ok) {
         throw new Error("Error en el registro");
       }
       const data = await response.json();
-      localStorage.setItem("user", JSON.stringify({email, token: data.access_token, id: data.id}))
+      localStorage.setItem("user", JSON.stringify({ email, token: data.access_token, id: data.id }))
       navigate("/dashboard")
     } catch (error) {
       console.log(error);
@@ -49,86 +50,109 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
-      <div className="card w-full max-w-md">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold">Crear una cuenta</h2>
-          <p className="text-gray-600 text-sm">Ingresa tus datos para registrarte en el Sistema de Notas</p>
-        </div>
+    // <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
+    //   <div className="card w-full max-w-md">
+    //     <div className="mb-6">
+    //       <h2 className="text-2xl font-bold">Crear una cuenta</h2>
+    //       <p className="text-gray-600 text-sm">Ingresa tus datos para registrarte en el Sistema de Notas</p>
+    //     </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="alert alert-error">{error}</div>}
+    //     <form onSubmit={handleSubmit} className="space-y-4">
+    //       {error && <div className="alert alert-error">{error}</div>}
 
-          <div>
-            <label htmlFor="name" className="label">
-              Nombre
-            </label>
-            <input
-              id="name"
-              type="text"
-              className="input"
-              placeholder="Tu nombre"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
 
-          <div>
-            <label htmlFor="email" className="label">
-              Correo Electrónico
-            </label>
-            <input
+
+    //       <div>
+
+    //       </div>
+
+    //       <div>
+
+    //       </div>
+
+    //       <div>
+
+    //       </div>
+
+
+    //     </form>
+
+    //     <div className="mt-6 text-center text-sm">
+
+    //     </div>
+    //   </div>
+    // </div>
+    <div className="flex min-h-screen items-center justify-center px-4 py-12">
+      <Card className="w-full max-x-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2x1 font-bold">Crear una Cuenta</CardTitle>
+          <CardDescription>Ingresa tus datos para registrarte en el Sistema de Notas </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <Alert>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="name">Nombre</Label>
+              <Input
+                id="name"
+                placeholder="Tu nombre"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+            <Label htmlFor="email">Correo Electrónico</Label>
+            <Input
               id="email"
               type="email"
-              className="input"
               placeholder="tu@ejemplo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="label">
+            </div>
+            <div className="space-y-2">
+            <Label htmlFor="password">
               Contraseña
-            </label>
-            <input
+            </Label>
+            <Input
               id="password"
               type="password"
-              className="input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-          </div>
-
-          <div>
-            <label htmlFor="confirm-password" className="label">
-              Confirmar Contraseña
-            </label>
-            <input
+            </div>
+            <div className="space-y-2">
+            <Label htmlFor="confirm-password">Confirmar Contraseña</Label>
+            <Input
               id="confirm-password"
               type="password"
-              className="input"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
-          </div>
-
-          <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Registrando..." : "Registrarse"}
-          </button>
-        </form>
+          </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="flex flex-col">
+          <div className="mt-2 text-center text-sm">
+        ¿Ya tienes una cuenta?{" "}
 
-        <div className="mt-6 text-center text-sm">
-          ¿Ya tienes una cuenta?{" "}
-          <button onClick={() => navigate("/")} className="text-blue-600 hover:underline">
+          </div>
+          <a onClick={() => navigate("/")} className="text-primary underline-offset-4 hover:underline">
             Iniciar Sesión
-          </button>
-        </div>
-      </div>
+          </a>
+        </CardFooter>
+      </Card>
     </div>
   )
 }
