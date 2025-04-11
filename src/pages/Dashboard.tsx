@@ -4,6 +4,13 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import type { Tag } from "@/components/TagInput"
 import Swal from "sweetalert2";
+
+// Tipo para las etiquetas
+export type Tag = {
+  id: string
+  name: string
+  color?: string
+}
 interface Note {
   id: string
   title: string
@@ -40,7 +47,6 @@ export default function Dashboard() {
 
     const loadNotes = async () => {
       try {
-
         const response = await fetch("http://localhost:8000/api/notes/", {
           method: "GET",
           headers: {
@@ -134,12 +140,10 @@ export default function Dashboard() {
     });
   }
 
-  // Filtrar por etiqueta
   const filterByTag = (tagId: string) => {
     setSelectedTag(selectedTag === tagId ? null : tagId)
   }
-
-  // Obtener todas las etiquetas únicas de las notas
+  
   const getUniqueTags = () => {
     const uniqueTags: Tag[] = []
     notes.forEach((note) => {
