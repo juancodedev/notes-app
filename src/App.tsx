@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
-import { ThemeProvider } from "./components/ThemeProvider"
+// import { ThemeProvider } from "./components/ThemeProvider"
 
 import Home from "./pages/Home"
 import NotePage from "./pages/NotePage"
