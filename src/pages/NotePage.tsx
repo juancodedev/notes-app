@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Alert, AlertDescription, AlertTitle, Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Input, Textarea } from "@/components/ui"
+import { Alert, AlertDescription, AlertTitle, Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Input, Textarea } from "@/components/ui-temp"
 import { type Tag } from "@/components/TagInput"
 import TagManager from "@/components/TagManager"
 import { AlertTriangle, ArrowLeft, GitMerge, RefreshCcw, Save, X } from "lucide-react"
@@ -30,7 +30,7 @@ export default function NotePage() {
   const [showConflictModal, setShowConflictModal] = useState(false)
   const [showAsModal, setShowAsModal] = useState(false)
 
-  const [isTagsLoading, setIsTagsLoading] = useState(true)
+  const setIsTagsLoading = useState(true)[1]
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -200,14 +200,53 @@ export default function NotePage() {
     }
   }, [])
 
-  const handleCreateTag = (newTag: Tag) => {
-    setAllTags([...allTags, newTag])
-  }
+  const handleCreateTag = async (newTag: Tag) => {
+    try {
+      const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") as string) : null
+      const token = user?.token;
 
-  const handleDeleteTag = (tagId: string) => {
-    setAllTags(allTags.filter((tag) => tag.id !== tagId))
-    if (tags.some((tag) => tag.id === tagId)) {
-      setTags(tags.filter((tag) => tag.id !== tagId))
+      const response = await fetch("http://localhost:8000/tags/",{
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+          },
+          body: JSON.stringify(newTag),
+        });
+        if (!response.ok){
+          throw new Error("Error al crear la etiqueta");
+        }
+        const createdTag = await response.json();
+        setAllTags([...allTags, createdTag])
+    } catch (error){
+      console.error("Error al crear la etiqueta", error);
+      setError("No se pudo crear la etiqueta. Intenta nuevamente.")
+    }
+  };
+
+  const handleDeleteTag = async (tagId: string) => {
+    try {
+      const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") as string) : null;
+      const token = user?.token;
+
+      const response = await fetch(`http://localhost:8000/tags/${tagId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+      });
+
+      if (!response.ok){
+        throw new Error("Error al eliminar la etiqueta");
+      }
+      setAllTags(allTags.filter((tag) => tag.id !== tagId));
+      if (tags.some((tag) => tag.id === tagId)) {
+        setTags(tags.filter((tag) => tag.id !== tagId));
+      }
+    } catch (error) {
+      console.error("Error al eliminar la etiqueta", error);
+      setError("No se pudo eliminar la etiqueta. Intenta nuevamente.");
     }
   }
 
@@ -249,7 +288,7 @@ export default function NotePage() {
         {hasConflict && showConflictModal && (
           <Card className="mb-6 border-yellow-500">
             <CardContent className="p-4">
-              <Alert className="border-yellow-500">
+              <Alert className="border-yellow-500" title={""} description={""}>
                 <AlertTriangle className="h-4 w-4 text-yellow-500" />
                 <AlertTitle>Conflicto de edición</AlertTitle>
                 <AlertDescription>
@@ -263,7 +302,7 @@ export default function NotePage() {
                     <X className="mr-2 h-4 w-4" /> Descartar cambios
                   </Button>
                   <Button onClick={() => resolveConflict("retry")} variant="outline" size="sm">
-                    <RefreshCcw className="mr-2 h-4 w-4" /> Fusionar cambios
+                    <RefreshCcw className="mr-2 h-4 w-4" /> Reintentar
                   </Button>
                 </div>
               </Alert>
@@ -302,11 +341,6 @@ export default function NotePage() {
               onTagDelete={handleDeleteTag}
             />
           </div>
-        </div>
-        <div className="mt-6 flex justify-end">
-          <Button variant="outline" onClick={() => saveNote()} disabled={isSaving}>
-            {isSaving ? "Guardando..." : "Guardar"}
-          </Button>
         </div>
       </>
     )
