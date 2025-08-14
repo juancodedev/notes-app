@@ -39,8 +39,8 @@ importers:
         specifier: ^2.0.1
         version: 2.0.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       sweetalert2:
-        specifier: ^11.17.2
-        version: 11.17.2
+        specifier: ^11.22.4
+        version: 11.22.4
       tailwind-merge:
         specifier: ^3.0.2
         version: 3.0.2
@@ -1151,8 +1151,8 @@ packages:
     resolution: {integrity: sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==}
     engines: {node: '>=8'}
 
-  sweetalert2@11.17.2:
-    resolution: {integrity: sha512-HKxDr1IyV3Lxr3W6sb61qm/p2epFIEdr5EKwteRFHnIg6f8nHFl2kX++DBVz16Mac+fFiU3hMpjq1L6yE2Ge5w==}
+  sweetalert2@11.22.4:
+    resolution: {integrity: sha512-JwcRODfozxiKmspFp+xctZ2izAmLAKbRPcoLMEW7LdugN/YmNrX1LT7hdBW87qsgupEO1ukBBuB17KzKFKW0tg==}
 
   tailwind-merge@3.0.2:
     resolution: {integrity: sha512-l7z+OYZ7mu3DTqrL88RiKrKIqO3NcpEO8V/Od04bNpvk0kiIFndGEoqfuzvj4yuhRkHKjRkII2z+KS2HfPcSxw==}
@@ -2174,7 +2174,7 @@ snapshots:
     dependencies:
       has-flag: 4.0.0
 
-  sweetalert2@11.17.2: {}
+  sweetalert2@11.22.4: {}
 
   tailwind-merge@3.0.2: {}
 
